@@ -1,0 +1,34 @@
+from flask import Blueprint, jsonify, request, g
+from mysql_db import get_db_connection
+from models.meq_question import MEQQuestion
+from models.meq_answer   import MEQAnswer
+
+meq_bp = Blueprint("meq", __name__)
+
+@meq_bp.route('/questions', methods=['GET'])
+def get_meq_questions():
+    questions = MEQQuestion.all()
+    return jsonify([q.to_dict() for q in questions]), 200
+
+@meq_bp.route('/choices', methods=['GET'])
+def get_meq_choices():
+    choices = MEQChoice.query.order_by(MEQChoice.question_id, MEQChoice.id).all()
+    return jsonify([c.to_dict() for c in choices]), 200
+
+@meq_bp.route('/api/answers', methods=['POST'])
+def save_meq_answers():
+    data = request.get_json(force=True)
+    pid  = data.get('participant_id')
+    ans  = data.get('answers', [])
+
+    if not pid or not isinstance(ans, list):
+        return jsonify({'error': 'Ugyldigt payload'}), 400
+
+    MEQAnswer.save(pid, ans)
+    return jsonify({'status': 'OK'}), 200
+
+@meq_bp.teardown_app_request
+def close_db(exc):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
