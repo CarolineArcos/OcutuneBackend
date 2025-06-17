@@ -11,6 +11,7 @@ def get_meq_questions():
         # 1) Brug din egen all()-metode
         questions = MEQQuestion.all()
 
+
         # 2) Serialisér til JSON
         return jsonify([q.to_dict() for q in questions]), 200
     except Exception as e:
